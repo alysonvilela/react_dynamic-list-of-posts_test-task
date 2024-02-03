@@ -1,104 +1,111 @@
 import React, { useState, useEffect } from 'react';
 import { NewCommentForm } from '../NewCommentForm';
 import './PostDetails.scss';
-import { Post, Comment } from '../../react-app-env';
-import { getComments, delComment } from '../../api/comments';
-import { getPostbyId } from '../../api/posts';
+import { Post, Comment, MakeCommentRequest } from '../../react-app-env';
+import { getComments, delComment, postComment } from '../../api/comments';
+import { getPostById } from '../../api/posts';
 
 type Props = {
   postId: number | undefined;
 };
 
-export const PostDetails: React.FC<Props> = ({
-  postId,
-}) => {
-  const [commentsList, setCommentsList] = useState<Comment[] | undefined>([]);
-  const [visiblecomments, setVisiblecomments] = useState(false);
+export const PostDetails: React.FC<Props> = ({ postId }) => {
+  const [commentsList, setCommentsList] = useState<Comment[]>([]);
+  const [isCommentsVisible, setIsVisibleComments] = useState(false);
   const [postDetails, setPostDetails] = useState<Post>();
 
-  const findPost = async () => {
-    if (postId) {
-      const result = await getPostbyId(postId);
+  const isPostValid = typeof postId === 'number';
 
-      setPostDetails(result);
+  const handleSuccessUpdate = async (success: boolean) => {
+    if (success && postId) {
+      const res = await getComments(postId);
+
+      setCommentsList(res);
+    }
+  };
+
+  const handleDeleteComment = async (id: number) => {
+    if (commentsList && postId) {
+      const success = await delComment(id);
+
+      await handleSuccessUpdate(success);
+    }
+  };
+
+  const handleAddComment = async ({
+    name, email, body,
+  }: MakeCommentRequest) => {
+    if (postId) {
+      const success = await postComment(name, email, body, postId);
+
+      await handleSuccessUpdate(success);
     }
   };
 
   useEffect(() => {
-    findPost();
-  }, []);
+    if (isPostValid) {
+      (async () => {
+        const [postDetailRes, postCommentsRes] = await Promise.all([
+          getPostById(postId),
+          getComments(postId),
+        ]);
 
-  const findcomments = async () => {
-    if (postId) {
-      const result = await getComments(postId);
+        if (postDetailRes) {
+          setPostDetails(postDetailRes);
+        }
 
-      setCommentsList(result);
+        setCommentsList(postCommentsRes);
+      })();
     }
-  };
-
-  const deletecomment = async (id: number) => {
-    if (commentsList) {
-      await delComment(id);
-      findcomments();
-    }
-  };
-
-  useEffect(() => {
-    findcomments();
   }, [postId]);
 
   return (
     <div className="PostDetails">
       <h2>Post details:</h2>
-      {postId !== 0 && (
+      {isPostValid && postDetails?.id && (
         <>
           <section className="PostDetails__post">
-            <p>
-              {postDetails?.title}
-            </p>
+            <p>{postDetails?.title}</p>
           </section>
           <section className="PostDetails__comments">
             <button
               type="button"
               className="button"
               onClick={() => {
-                setVisiblecomments(!visiblecomments);
+                setIsVisibleComments((prev) => !prev);
               }}
             >
-              {commentsList && ((visiblecomments)
-                ? `Show ${commentsList.length} comments`
-                : `Hide ${commentsList.length} comments`)}
+              {commentsList
+                && (isCommentsVisible
+                  ? `Show ${commentsList.length} comments`
+                  : `Hide ${commentsList.length} comments`)}
             </button>
             <ul
-              className={visiblecomments
-                ? 'PostDetails__visiblelist'
-                : 'PostDetails__list'}
+              className={
+                isCommentsVisible
+                  ? 'PostDetails__visiblelist'
+                  : 'PostDetails__list'
+              }
             >
-              {commentsList && commentsList.map(comm => (
-                <li
-                  className="PostDetails__list-item"
-                  key={comm.id}
-                >
+              {commentsList?.map((comment) => (
+                <li className="PostDetails__list-item" key={comment.id}>
                   <button
                     type="button"
                     className="PostDetails__remove-button button"
                     onClick={() => {
-                      deletecomment(comm.id);
+                      handleDeleteComment(comment.id);
                     }}
                   >
                     X
                   </button>
-                  <p>{comm.body}</p>
+                  <p>{comment.body}</p>
                 </li>
               ))}
             </ul>
           </section>
           <section>
             <div className="PostDetails__form-wrapper">
-              <NewCommentForm
-                commentsList={commentsList}
-                setCommentsList={setCommentsList}
-              />
+              <NewCommentForm onAdd={handleAddComment} />
             </div>
           </section>
         </>
