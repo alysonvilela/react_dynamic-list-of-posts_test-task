@@ -1,25 +1,35 @@
-import { Post } from '../react-app-env';
+import { Post, User } from '../react-app-env';
+import { BASE_URL } from './api';
 
-export const BASE_URL = 'https://mate.academy/students-api/';
+export async function getUserPosts(userId: User['id']): Promise<Post[]> {
+  try {
+    const response = await fetch(`${BASE_URL}/posts?userId=${userId}`);
+    const json: Post[] = await response.json();
 
-export async function getPosts(userId: string): Promise<Post[]> {
-  const response = await fetch(`${BASE_URL}/posts?userId=${userId}`);
-
-  if (!response.ok) {
-    throw new Error(`${response.status} - ${response.statusText}`);
+    return json ?? [];
+  } catch (err) {
+    return [];
   }
-
-  return response.json();
 }
 
-export async function getPostbyId(postId:number) {
-  const response = await fetch(`${BASE_URL}/posts/${postId}`);
+export async function getPostById(postId: Post['id']): Promise<Post | null> {
+  try {
+    const response = await fetch(`${BASE_URL}/posts/${postId}`);
+    const json: Post = await response.json();
 
-  return response.json();
+    return json ?? null;
+  } catch (err) {
+    return null;
+  }
 }
 
 export async function getAllPosts() {
-  const response = await fetch(`${BASE_URL}/posts`);
+  try {
+    const response = await fetch(`${BASE_URL}/posts`);
+    const json: Post[] = await response.json();
 
-  return response.json();
+    return json ?? [];
+  } catch (err) {
+    return [];
+  }
 }

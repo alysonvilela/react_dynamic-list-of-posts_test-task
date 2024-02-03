@@ -1,37 +1,49 @@
-export const BASE_URL = 'https://mate.academy/students-api/';
+import { Comment, Post } from '../react-app-env';
+import { BASE_URL } from './api';
 
-export async function getComments(postId: number) {
-  const response = await fetch(`${BASE_URL}/comments?postId=${postId}`);
+export async function getComments(postId: Post['id']): Promise<Comment[]> {
+  try {
+    const response = await fetch(`${BASE_URL}/comments?postId=${postId}`);
+    const json: Comment[] = await response.json();
 
-  if (!response.ok) {
-    throw new Error(`${response.status} - ${response.statusText}`);
+    return json ?? [];
+  } catch (err) {
+    return [];
   }
-
-  return response.json();
 }
 
-export async function delComment(id : number) {
-  const result = await fetch(`${BASE_URL}/comments/${id}`, { method: 'DELETE' });
+export async function delComment(id: Comment['id']): Promise<boolean> {
+  try {
+    await fetch(`${BASE_URL}/comments/${id}`, { method: 'DELETE' });
 
-  return result;
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 export async function postComment(
-  name : string,
-  email : string,
-  body : string,
+  name: string,
+  email: string,
+  body: string,
   postId: number,
-) {
-  await fetch(`${BASE_URL}/comments`, {
-    method: 'POST',
-    headers: {
-      'Content-type': 'application/json; charset=UTF-8',
-    },
-    body: JSON.stringify({
-      postId,
-      name,
-      email,
-      body,
-    }),
-  });
+): Promise<boolean> {
+  try {
+    await fetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify({
+        postId,
+        name,
+        email,
+        body,
+      }),
+    });
+
+    return true;
+  } catch (err) {
+    return false;
+  }
 }

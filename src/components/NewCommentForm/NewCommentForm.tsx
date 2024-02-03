@@ -1,65 +1,61 @@
 import './NewCommentForm.scss';
 import React, { FormEvent, useState } from 'react';
-import { Comment } from '../../react-app-env';
+import { MakeCommentRequest } from '../../react-app-env';
 
 type Props = {
-  commentsList: Comment[] | undefined;
-  setCommentsList: (arg:Comment[]) => void;
+  onAdd: (req: MakeCommentRequest) => void;
 };
 
-export const NewCommentForm: React.FC<Props> = ({
-  commentsList, setCommentsList,
-}) => {
-  const [yourname, setYourname] = useState('');
-  const [youremail, setYouremail] = useState('');
-  const [yourcomment, setYourcomment] = useState('');
+const formInitialState = {
+  name: '',
+  email: '',
+  comment: '',
+};
+
+type FormState = typeof formInitialState;
+
+export const NewCommentForm: React.FC<Props> = ({ onAdd }) => {
+  const [formState, setFormState] = useState<FormState>(formInitialState);
   const [error, setError] = useState(false);
 
-  const addComment = (newComment: Comment) => {
-    if (commentsList) {
-      commentsList.unshift(newComment);
-      const copy = [...commentsList];
+  const { name, email, comment } = formState;
 
-      setCommentsList(copy);
-    }
+  const handleInput = (key: keyof FormState, value: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
-  const submitHandler = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (yourname && youremail && yourcomment && commentsList) {
-      const newComment = {
-        id: commentsList.length + 1,
-        postId: commentsList[0].postId,
-        name: yourname,
-        email: youremail,
-        body: yourcomment,
+    if (name && email && comment) {
+      const newComment: MakeCommentRequest = {
+        name,
+        email,
+        body: comment,
       };
 
-      addComment(newComment);
+      onAdd(newComment);
       setError(false);
-      setYourname('');
-      setYouremail('');
-      setYourcomment('');
+      setFormState(formInitialState);
     } else {
       setError(true);
     }
   };
 
   return (
-    <form
-      className="NewCommentForm"
-      onSubmit={submitHandler}
-    >
+    <form className="NewCommentForm" onSubmit={onSubmit}>
       <div className="form-field">
         <input
           type="text"
           name="name"
           placeholder="Your name"
-          value={yourname}
+          value={name}
           className="NewCommentForm__input"
           onChange={(event) => {
-            setYourname(event.target.value);
+            handleInput('name', event.target.value);
           }}
         />
       </div>
@@ -70,9 +66,9 @@ export const NewCommentForm: React.FC<Props> = ({
           name="email"
           placeholder="Your email"
           className="NewCommentForm__input"
-          value={youremail}
+          value={email}
           onChange={(event) => {
-            setYouremail(event.target.value);
+            handleInput('email', event.target.value);
           }}
         />
       </div>
@@ -82,22 +78,15 @@ export const NewCommentForm: React.FC<Props> = ({
           name="body"
           placeholder="Type comment here"
           className="NewCommentForm__input"
-          value={yourcomment}
+          value={comment}
           onChange={(event) => {
-            setYourcomment(event.target.value);
+            handleInput('comment', event.target.value);
           }}
         />
       </div>
-      {error && (
-        <div style={{ color: 'red' }}>
-          Add correct data
-        </div>
-      )}
+      {error && <div style={{ color: 'red' }}>Add correct data</div>}
 
-      <button
-        type="submit"
-        className="NewCommentForm__submit-button button"
-      >
+      <button type="submit" className="NewCommentForm__submit-button button">
         Add a comment
       </button>
     </form>
